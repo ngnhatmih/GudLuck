@@ -1,138 +1,101 @@
-#include <glad/glad.h>
-#define GLFW_INCLUDE_NONE
+/******************************
+ *
+ * Example "Square"
+ * created by Syd
+ *
+ *******************************/
+
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
-  
-#include "linmath.h"
- 
-#include <stdlib.h>
-#include <stdio.h>
- 
-static const struct
-{
-    float x, y;
-    float r, g, b;
-} vertices[3] =
-{
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f }
-};
- 
-static const char* vertex_shader_text =
-"#version 110\n"
-"uniform mat4 MVP;\n"
-"attribute vec3 vCol;\n"
-"attribute vec2 vPos;\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
-"    color = vCol;\n"
-"}\n";
- 
-static const char* fragment_shader_text =
-"#version 110\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_FragColor = vec4(color, 1.0);\n"
-"}\n";
- 
-static void error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Error: %s\n", description);
+#include <cstdlib>
+#include <iostream>
+
+static int WIDTH = 640;
+static int HEIGHT = 480;
+double PI = 3.1415;
+double trans = 0;
+float rotatex = 0, rotatey = 0, mousex = 0, mousey = 0;
+bool dragging = false;
+int keyArr[350];
+
+static void Initialize(void) {
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 }
- 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+static void Update(GLFWwindow* window, float delta) {
+	std::cout << "delta:"<<delta<< std::endl;
+	if (keyArr[GLFW_KEY_ESCAPE])
+		glfwSetWindowShouldClose(window, 1);
+	rotatex += keyArr[GLFW_KEY_LEFT] - keyArr[GLFW_KEY_RIGHT];
+	rotatey += keyArr[GLFW_KEY_UP] - keyArr[GLFW_KEY_DOWN];
 }
- 
-int main(void)
-{
-    GLFWwindow* window;
-    GLuint vertex_buffer, vertex_shader, fragment_shader, program;
-    GLint mvp_location, vpos_location, vcol_location;
- 
-    glfwSetErrorCallback(error_callback);
- 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
- 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
- 
-    window = glfwCreateWindow(600, 480, "Simple example", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
- 
-    glfwSetKeyCallback(window, key_callback);
- 
-    glfwMakeContextCurrent(window);
-    gladLoadGL();
-    glfwSwapInterval(1);
- 
-    // NOTE: OpenGL error checks have been omitted for brevity
- 
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
- 
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
- 
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
- 
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
- 
-    mvp_location = glGetUniformLocation(program, "MVP");
-    vpos_location = glGetAttribLocation(program, "vPos");
-    vcol_location = glGetAttribLocation(program, "vCol");
- 
-    glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(vertices[0]), (void*) 0);
-    glEnableVertexAttribArray(vcol_location);
-    glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(vertices[0]), (void*) (sizeof(float) * 2));
- 
-    while (!glfwWindowShouldClose(window))
-    {
-        float ratio;
-        int width, height;
-        mat4x4 m, p, mvp;
- 
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float) height;
- 
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
- 
-        mat4x4_identity(m);
-        mat4x4_rotate_Z(m, m, (float) glfwGetTime());
-        mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        mat4x4_mul(mvp, p, m);
- 
-        glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) mvp);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
- 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
- 
-    glfwDestroyWindow(window);
- 
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
+
+static void RenderScene(GLFWwindow* window, float delta) {
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(1, 1, 1);
+
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(0.25, 0.25);
+	glVertex2f(0.75, 0.25);
+	glVertex2f(0.75, 0.75);
+	glVertex2f(0.25, 0.75);
+	glEnd();
+	glFlush();
+}
+
+static void Resize(GLFWwindow* window, int w, int h) {
+    if (h < 1)
+            h = 1;
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0f, (float) w / (float) h, 0.1f, 1000.0f);
+    gluLookAt(0.0f, 0.0f, 30, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+    glMatrixMode( GL_MODELVIEW);
+}
+
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	keyArr[key] = action;
+}
+
+static void MouseClickCallback(GLFWwindow* window, int button, int action, int mods) {
+	switch (button) {
+	case GLFW_MOUSE_BUTTON_1:
+		dragging = action;
+		break;
+	}
+}
+
+static void MouseMotionCallback(GLFWwindow* window, double x, double y) {
+	if (dragging) {
+		mousex += x;
+		mousey += y;
+	}
+}
+
+int main(int argc, char** argv) {
+	GLFWwindow* window;
+
+	glfwInit();
+	window = glfwCreateWindow(WIDTH, HEIGHT, argv[0], NULL, NULL);
+	glfwMakeContextCurrent(window);
+
+	Initialize();
+
+	glfwSetWindowSizeCallback(window, Resize);
+	glfwSetKeyCallback(window, KeyCallback);
+	glfwSetMouseButtonCallback(window, MouseClickCallback);
+	glfwSetCursorPosCallback(window, MouseMotionCallback);
+	while (!glfwWindowShouldClose(window)) {
+		float delta = glfwGetTime();
+		Update(window, delta);
+		RenderScene(window, delta);
+		glfwSetTime(0);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+	glfwDestroyWindow(window);
+	return 0;
 }
